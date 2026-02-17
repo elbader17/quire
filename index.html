@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quire - The Sheet Database</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            400: '#34d399', // Emerald light
+                            500: '#10b981', // Emerald
+                            glow: '#0F9D58',
+                        }
+                    },
+                    backgroundImage: {
+                        'grid-pattern': "linear-gradient(to right, #1f2937 1px, transparent 1px), linear-gradient(to bottom, #1f2937 1px, transparent 1px)",
+                    },
+                    backgroundSize: {
+                        'grid-size': '40px 40px',
+                    },
+                    animation: {
+                        'float': 'float 8s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'beam': 'beam 10s linear infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-20px) rotate(1deg)' },
+                        },
+                        beam: {
+                            '0%': { transform: 'translateX(-100%) translateY(-100%) rotate(45deg)' },
+                            '100%': { transform: 'translateX(100%) translateY(100%) rotate(45deg)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #e5e7eb;
+            overflow-x: hidden;
+        }
+
+        /* Grid Background Effect */
+        .bg-grid {
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+            -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+        }
+
+        /* Neon Text Selection */
+        ::selection {
+            background: #10b981;
+            color: #000;
+        }
+
+        /* Card Hover Glow Effect */
+        .glow-card {
+            position: relative;
+            background: rgba(20, 20, 20, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        .glow-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: 0.5s;
+        }
+        .glow-card:hover {
+            border-color: #10b981;
+            transform: translateY(-5px);
+            box-shadow: 0 0 30px -10px rgba(16, 185, 129, 0.3);
+        }
+        .glow-card:hover::before {
+            left: 100%;
+        }
+
+        /* New Glass Code Window Style */
+        .code-window {
+            background: rgba(15, 15, 15, 0.65); /* More transparency */
+            backdrop-filter: blur(16px);         /* Stronger blur */
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Thin subtle border */
+            border-radius: 12px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); /* Deep shadow for depth */
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+
+        /* Overrides for PrismJS to fit the transparent theme */
+        pre[class*="language-"] {
+            background: transparent !important;
+            text-shadow: none !important;
+            margin: 0 !important;
+            padding: 1.5rem !important;
+        }
+        code[class*="language-"], pre[class*="language-"] {
+            font-family: 'JetBrains Mono', monospace !important;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        /* Typography Highlights */
+        .text-gradient {
+            background: linear-gradient(to right, #ffffff, #9ca3af);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .text-accent {
+            color: #34d399;
+            text-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+        }
+
+        /* Scroll Reveal Animation Classes */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s ease-out;
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Background Grid & Glows -->
+    <div class="fixed inset-0 z-0 pointer-events-none">
+        <div class="absolute inset-0 bg-grid"></div>
+        <!-- Spotlight Top -->
+        <div class="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-brand-500/10 blur-[120px] rounded-full"></div>
+        <!-- Spotlight Bottom Right -->
+        <div class="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-600/10 blur-[100px] rounded-full"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 backdrop-blur-lg border-b border-white/5 bg-black/50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="relative w-8 h-8 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-brand-500 blur-md opacity-40"></div>
+                    <svg class="w-6 h-6 text-brand-400 relative z-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                <span class="font-display font-bold text-xl tracking-tight text-white">Quire</span>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+                <a href="#features" class="hover:text-white transition-colors">Features</a>
+                <a href="#code" class="hover:text-white transition-colors">API</a>
+                <a href="https://github.com/elbader17/quire" target="_blank" class="flex items-center gap-2 text-white bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full border border-white/10 transition-all hover:scale-105 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    Star on GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <main class="relative z-10 pt-40 pb-20">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            
+            <!-- Animated Badge -->
+            <div class="reveal inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-mono mb-8 uppercase tracking-widest hover:bg-brand-500/20 transition-colors cursor-default">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-400 animate-pulse"></span>
+                Go Database Interface
+            </div>
+
+            <!-- Headline -->
+            <h1 class="reveal font-display text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter mb-8 leading-[1.1]">
+                Google Sheets <br>
+                <span class="text-accent">reimagined</span> as SQL.
+            </h1>
+            
+            <p class="reveal text-lg md:text-xl text-gray-400 max-w-2xl mx-auto mb-12 font-light leading-relaxed">
+                Transforma hojas de cálculo en bases de datos relacionales para tus aplicaciones en Go. 
+                <span class="text-gray-200">Sin configuración de servidor. Sin migraciones.</span> Solo código.
+            </p>
+
+            <!-- Buttons -->
+            <div class="reveal flex flex-col sm:flex-row items-center justify-center gap-6 mb-24">
+                <div class="relative group cursor-pointer" onclick="navigator.clipboard.writeText('go get github.com/elbader17/quire')">
+                    <!-- Glow effect behind button -->
+                    <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-500 to-blue-500 rounded-lg blur opacity-30 group-hover:opacity-100 transition duration-300"></div>
+                    <div class="relative flex items-center bg-black border border-gray-800 rounded-lg px-6 py-4 font-mono text-gray-300 transition group-active:scale-[0.98]">
+                        <span class="text-brand-400 mr-3">$</span>
+                        go get github.com/elbader17/quire
+                        <svg class="w-4 h-4 ml-4 text-gray-600 group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D Floating Code Window (UPDATED) -->
+            <div class="reveal relative max-w-4xl mx-auto animate-float">
+                <div class="code-window text-left">
+                    <!-- Window Header (Glassy) -->
+                    <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/[0.03]">
+                        <div class="flex gap-2">
+                            <div class="w-3 h-3 rounded-full bg-white/10 hover:bg-red-500/50 transition-colors"></div>
+                            <div class="w-3 h-3 rounded-full bg-white/10 hover:bg-yellow-500/50 transition-colors"></div>
+                            <div class="w-3 h-3 rounded-full bg-white/10 hover:bg-green-500/50 transition-colors"></div>
+                        </div>
+                        <div class="ml-4 font-mono text-xs text-gray-500 flex-1 text-center pr-12">main.go</div>
+                    </div>
+                    <!-- Code Content -->
+                    <div class="overflow-x-auto">
+<pre><code class="language-go"><span class="text-purple-400">package</span> main
+
+<span class="text-purple-400">import</span> (
+    <span class="text-green-400">"github.com/elbader17/quire"</span>
+)
+
+<span class="text-gray-500">// 1. Define tu estructura de datos</span>
+<span class="text-purple-400">type</span> <span class="text-yellow-200">User</span> <span class="text-purple-400">struct</span> {
+    ID    <span class="text-blue-400">int</span>    <span class="text-green-400">`quire:"id"`</span>
+    Name  <span class="text-blue-400">string</span> <span class="text-green-400">`quire:"name"`</span>
+    Email <span class="text-blue-400">string</span> <span class="text-green-400">`quire:"email"`</span>
+}
+
+<span class="text-purple-400">func</span> <span class="text-blue-400">main</span>() {
+    <span class="text-gray-500">// 2. Conecta con Sheets como si fuera SQL</span>
+    db, _ := quire.<span class="text-blue-400">New</span>(config)
+    
+    <span class="text-gray-500">// 3. Query Builder fluido</span>
+    <span class="text-purple-400">var</span> results []<span class="text-yellow-200">User</span>
+    db.<span class="text-blue-400">Table</span>(<span class="text-green-400">"Users"</span>).<span class="text-blue-400">Query</span>().
+       <span class="text-blue-400">Where</span>(<span class="text-green-400">"Name"</span>, <span class="text-green-400">"contains"</span>, <span class="text-green-400">"Alice"</span>).
+       <span class="text-blue-400">Limit</span>(<span class="text-orange-400">10</span>).
+       <span class="text-blue-400">Get</span>(ctx, &results)
+}</code></pre>
+                    </div>
+                </div>
+                <!-- Reflection/Shadow below window -->
+                <div class="absolute -bottom-10 left-10 right-10 h-20 bg-brand-500/10 blur-[60px] rounded-[100%] z-[-1]"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Infinite Scrolling Banner -->
+    <div class="w-full bg-white/5 border-y border-white/5 py-8 overflow-hidden relative">
+        <div class="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505] z-10"></div>
+        <div class="flex gap-16 animate-[scroll_20s_linear_infinite] w-max px-6">
+             <!-- Repeat items for infinite scroll effect -->
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">Type Safe</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">Zero Config</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">No SQL</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">Cloud Native</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">Open Source</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+             <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">Type Safe</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">Zero Config</span>
+            <span class="text-gray-700 font-display text-2xl">•</span>
+            <span class="text-gray-500 font-display font-bold text-2xl uppercase opacity-50">No SQL</span>
+        </div>
+    </div>
+
+    <!-- Grid Features -->
+    <section id="features" class="py-32 relative">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="mb-20">
+                <h2 class="reveal font-display text-4xl font-bold mb-4">Why Quire?</h2>
+                <div class="h-1 w-20 bg-brand-500 rounded-full"></div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-6">
+                <!-- Feature 1 -->
+                <div class="reveal glow-card rounded-2xl p-8">
+                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center mb-6 border border-gray-700 text-brand-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </div>
+                    <h3 class="font-display text-xl font-bold text-white mb-3">Lightning Fast Setup</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        Olvídate de configurar Postgres o MySQL para proyectos pequeños. Crea una Service Account, comparte el Sheet y estás listo.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="reveal glow-card rounded-2xl p-8">
+                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center mb-6 border border-gray-700 text-blue-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                    </div>
+                    <h3 class="font-display text-xl font-bold text-white mb-3">Type Safety First</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        Si cambia en tu struct, Quire lo sabe. Validación de tipos fuerte en tiempo de compilación para evitar errores en runtime.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="reveal glow-card rounded-2xl p-8">
+                    <div class="w-12 h-12 bg-gray-800 rounded-lg flex items-center justify-center mb-6 border border-gray-700 text-purple-400">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+                    </div>
+                    <h3 class="font-display text-xl font-bold text-white mb-3">Developer Centric</h3>
+                    <p class="text-gray-400 leading-relaxed text-sm">
+                        API diseñada para humanos. Métodos encadenables, contexts, timeouts y manejo de errores idiomático de Go.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Side-by-Side Detail Section -->
+    <section id="code" class="py-20 border-t border-white/5 bg-white/[0.02]">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid lg:grid-cols-2 gap-16 items-center">
+                <div class="reveal">
+                    <h2 class="font-display text-3xl md:text-5xl font-bold mb-6">
+                        Write <span class="text-accent">Structs</span>,<br>
+                        Read Rows.
+                    </h2>
+                    <p class="text-gray-400 text-lg mb-8 leading-relaxed">
+                        El mapeo es automático. Solo agrega los tags `quire` a tus structs y la librería se encarga de convertir strings, números y booleanos mágicamente.
+                    </p>
+                    
+                    <ul class="space-y-4 font-mono text-sm text-gray-300">
+                        <li class="flex items-center gap-3">
+                            <span class="text-brand-400">✓</span> Auto-cast de tipos
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="text-brand-400">✓</span> Ignora campos privados
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="text-brand-400">✓</span> Sin reflexión costosa innecesaria
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="reveal relative">
+                    <!-- Decorational background blobs for this specific code block -->
+                    <div class="absolute inset-0 bg-gradient-to-tr from-brand-500/10 to-purple-500/10 blur-xl rounded-full"></div>
+                    <div class="code-window relative">
+                        <!-- Glass Header -->
+                        <div class="flex items-center gap-2 px-4 py-3 border-b border-white/5 bg-white/[0.03]">
+                            <div class="flex gap-2">
+                                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                                <div class="w-3 h-3 rounded-full bg-white/10"></div>
+                            </div>
+                            <div class="ml-4 font-mono text-xs text-gray-500 flex-1 text-center pr-12">products.go</div>
+                        </div>
+                        <div class="overflow-x-auto">
+<pre><code class="language-go">type Product struct {
+    ID          int     `quire:"id"`
+    Name        string  `quire:"product_name"`
+    Price       float64 `quire:"price_usd"`
+    IsAvailable bool    `quire:"in_stock"`
+    secretCode  string  `quire:"-"` // Ignorado
+}
+
+// Así de simple es insertar:
+func AddProduct(db *quire.DB) {
+    item := Product{
+        ID: 101, 
+        Name: "Gaming Mouse", 
+        Price: 59.99,
+    }
+    db.Table("Inventory").Insert(ctx, []Product{item})
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 bg-black pt-20 pb-10">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <h2 class="font-display text-3xl font-bold mb-8 text-white">Ready to ship?</h2>
+            <a href="https://github.com/elbader17/quire" class="inline-flex items-center justify-center gap-2 bg-white text-black px-8 py-4 rounded-full font-bold hover:bg-gray-200 transition-colors">
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                View on GitHub
+            </a>
+            <p class="mt-12 text-gray-600 text-sm">MIT License © 2024 Quire Contributors.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+    <script>
+        // Simple Scroll Reveal Script
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

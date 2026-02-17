@@ -24,6 +24,8 @@ Una librería de Go que proporciona una interfaz tipo base de datos para Google 
   - [Configuración](#configuración)
   - [Conexión](#conexión)
   - [Inserción de Datos](#inserción-de-datos)
+  - [Actualización de Datos](#actualización-de-datos)
+  - [Eliminación de Datos](#eliminación-de-datos)
   - [Consultas](#consultas)
   - [Filtros](#filtros)
   - [Mapeo de Structs](#mapeo-de-structs)
@@ -150,6 +152,21 @@ func main() {
     }
     
     log.Printf("Encontrados %d usuarios", len(results))
+    
+    // Actualizar datos
+    if len(results) > 0 {
+        results[0].Name = "Alice Updated"
+        err = users.Update(ctx, 0, results[0])
+        if err != nil {
+            log.Fatal(err)
+        }
+    }
+    
+    // Eliminar datos
+    err = users.DeleteWhere(ctx, "Status", "=", "inactive")
+    if err != nil {
+        log.Fatal(err)
+    }
 }
 ```
 
@@ -233,6 +250,84 @@ if err != nil {
 - Los datos se agregan al final de la hoja (append)
 - No se verifican duplicados automáticamente
 - Los campos con tag `quire:"-"` se ignoran
+
+### Actualización de Datos
+
+#### Update por Índice
+
+Actualiza una fila específica usando su índice (0-based, sin contar el header):
+
+```go
+// Actualizar la primera fila de datos (índice 0)
+updatedUser := User{
+    ID:    1,
+    Name:  "Alice Updated",
+    Email: "alice.new@example.com",
+    Age:   31,
+}
+
+err := db.Table("Users").Update(ctx, 0, updatedUser)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+#### Update con Filtro
+
+Actualiza todas las filas que coincidan con una condición:
+
+```go
+// Actualizar todos los usuarios con Status = "pending"
+updatedUser := User{
+    ID:     99,
+    Name:   "Updated Name",
+    Email:  "updated@example.com",
+    Age:    25,
+    Status: "active",
+}
+
+err := db.Table("Users").UpdateWhere(ctx, "Status", "=", "pending", updatedUser)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+### Eliminación de Datos
+
+#### Delete por Índice
+
+Elimina una fila específica usando su índice (0-based, sin contar el header):
+
+```go
+// Eliminar la primera fila de datos (índice 0)
+err := db.Table("Users").Delete(ctx, 0)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+#### Delete con Filtro
+
+Elimina todas las filas que coincidan con una condición:
+
+```go
+// Eliminar todos los usuarios con Status = "deleted"
+err := db.Table("Users").DeleteWhere(ctx, "Status", "=", "deleted")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Eliminar usuarios inactivos mayores de 60
+err = db.Table("Users").DeleteWhere(ctx, "IsActive", "=", false)
+if err != nil {
+    log.Fatal(err)
+}
+```
+
+**Notas:**
+- `DeleteWhere` elimina físicamente las filas del spreadsheet
+- Las filas se eliminan en orden inverso para mantener los índices correctos
+- Si no hay filas que coincidan, no se produce error
 
 ### Consultas
 
@@ -408,6 +503,35 @@ func main() {
     }
     
     fmt.Printf("Tareas completadas: %d\n", len(doneTasks))
+    
+    // UPDATE - Marcar una tarea como completada
+    if len(pendingTasks) > 0 {
+        pendingTasks[0].Status = "done"
+        err = tasks.Update(ctx, 0, pendingTasks[0])
+        if err != nil {
+            log.Fatal(err)
+        }
+        fmt.Printf("Tarea '%s' actualizada a completada\n", pendingTasks[0].Title)
+    }
+    
+    // UPDATE MASIVO - Cambiar prioridad de todas las tareas pendientes
+    err = tasks.UpdateWhere(ctx, "Status", "=", "pending", Task{
+        ID:     0,
+        Title:  "Updated",
+        Status: "pending",
+        Priority: 5,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Prioridad de tareas pendientes actualizada")
+    
+    // DELETE - Eliminar tareas canceladas
+    err = tasks.DeleteWhere(ctx, "Status", "=", "cancelled")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Tareas canceladas eliminadas")
 }
 ```
 
@@ -628,19 +752,17 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]User, error) {
 
 ## Limitaciones
 
-1. **No hay UPDATE ni DELETE**: Quire solo soporta CREATE (Insert) y READ (Query). Para modificar o eliminar datos, debes hacerlo manualmente en Google Sheets o implementar tu propia lógica.
+1. **No hay transacciones**: Las operaciones no son atómicas. Si una operación falla a mitad de proceso, algunos cambios pueden haberse aplicado y otros no.
 
-2. **No hay transacciones**: Las operaciones no son atómicas.
-
-3. **Rate Limits de Google**: Google Sheets API tiene cuotas:
+2. **Rate Limits de Google**: Google Sheets API tiene cuotas:
    - 500 requests por 100 segundos por proyecto
    - 100 requests por 100 segundos por usuario
 
-4. **Límite de filas**: Google Sheets soporta hasta 10 millones de celdas por spreadsheet.
+3. **Límite de filas**: Google Sheets soporta hasta 10 millones de celdas por spreadsheet.
 
-5. **Ordenamiento**: La función `OrderBy` actualmente es un placeholder y no ordena realmente los resultados.
+4. **Ordenamiento**: La función `OrderBy` actualmente es un placeholder y no ordena realmente los resultados.
 
-6. **Concurrencia**: Aunque Quire soporta `context.Context`, no hay control de concurrencia a nivel de filas.
+5. **Concurrencia**: Aunque Quire soporta `context.Context`, no hay control de concurrencia a nivel de filas.
 
 ## Solución de Problemas
 

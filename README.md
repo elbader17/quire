@@ -1,98 +1,98 @@
 # Quire
 
-Una librería de Go que proporciona una interfaz tipo base de datos para Google Sheets. Convierte tus hojas de cálculo en una base de datos documental con operaciones CRUD, consultas con filtros y mapeo de structs.
+A Go library that provides a database-like interface for Google Sheets. Turn your spreadsheets into a document database with CRUD operations, filtered queries, and struct mapping.
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/elbader17/quire)](https://goreportcard.com/report/github.com/elbader17/quire)
 [![GoDoc](https://godoc.org/github.com/elbader17/quire?status.svg)](https://godoc.org/github.com/elbader17/quire)
 
-## Características
+## Features
 
-- **API tipo ORM**: Operaciones familiares de base de datos (CRUD) sobre Google Sheets
-- **Mapeo type-safe**: Convierte structs de Go a filas de sheets usando tags
-- **Query builder**: Construye consultas fluidas con filtros, límites y ordenamiento
-- **Autenticación segura**: Usa Service Accounts para autenticación server-to-server
-- **Sin esquema**: No requiere definir tablas ni columnas previamente
-- **Concurrente**: Soporte completo para operaciones concurrentes con `context.Context`
+- **ORM-like API**: Familiar database operations (CRUD) on Google Sheets
+- **Type-safe mapping**: Convert Go structs to sheet rows using tags
+- **Query builder**: Build fluent queries with filters, limits, and ordering
+- **Secure authentication**: Use Service Accounts for server-to-server authentication
+- **Schema-less**: No need to define tables or columns beforehand
+- **Concurrent**: Full support for concurrent operations with `context.Context`
 
-## Tabla de Contenidos
+## Table of Contents
 
-- [Instalación](#instalación)
-- [Configuración de Google Cloud](#configuración-de-google-cloud)
-- [Guía de Inicio Rápido](#guía-de-inicio-rápido)
-- [Conceptos Fundamentales](#conceptos-fundamentales)
-- [API Completa](#api-completa)
-  - [Configuración](#configuración)
-  - [Conexión](#conexión)
-  - [Inserción de Datos](#inserción-de-datos)
-  - [Actualización de Datos](#actualización-de-datos)
-  - [Eliminación de Datos](#eliminación-de-datos)
-  - [Consultas](#consultas)
-  - [Filtros](#filtros)
-  - [Mapeo de Structs](#mapeo-de-structs)
-- [Ejemplos Avanzados](#ejemplos-avanzados)
-- [Mejores Prácticas](#mejores-prácticas)
-- [Limitaciones](#limitaciones)
-- [Solución de Problemas](#solución-de-problemas)
+- [Installation](#installation)
+- [Google Cloud Configuration](#google-cloud-configuration)
+- [Quick Start Guide](#quick-start-guide)
+- [Core Concepts](#core-concepts)
+- [Complete API](#complete-api)
+  - [Configuration](#configuration)
+  - [Connection](#connection)
+  - [Inserting Data](#inserting-data)
+  - [Updating Data](#updating-data)
+  - [Deleting Data](#deleting-data)
+  - [Queries](#queries)
+  - [Filters](#filters)
+  - [Struct Mapping](#struct-mapping)
+- [Advanced Examples](#advanced-examples)
+- [Best Practices](#best-practices)
+- [Limitations](#limitations)
+- [Troubleshooting](#troubleshooting)
 
-## Instalación
+## Installation
 
 ```bash
 go get github.com/elbader17/quire
 ```
 
-Requiere Go 1.21 o superior.
+Requires Go 1.21 or higher.
 
-## Configuración de Google Cloud
+## Google Cloud Configuration
 
-Antes de usar Quire, necesitas configurar el acceso a Google Sheets API:
+Before using Quire, you need to set up access to the Google Sheets API:
 
-### 1. Crear un Proyecto en Google Cloud Console
+### 1. Create a Project in Google Cloud Console
 
-1. Ve a [Google Cloud Console](https://console.cloud.google.com/)
-2. Crea un nuevo proyecto o selecciona uno existente
-3. Habilita la **Google Sheets API**:
-   - Navega a "APIs & Services" > "Library"
-   - Busca "Google Sheets API"
-   - Haz clic en "Enable"
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the **Google Sheets API**:
+   - Navigate to "APIs & Services" > "Library"
+   - Search for "Google Sheets API"
+   - Click "Enable"
 
-### 2. Crear una Service Account
+### 2. Create a Service Account
 
-1. Ve a "IAM & Admin" > "Service Accounts"
-2. Haz clic en "Create Service Account"
-3. Asigna un nombre y descripción
-4. En "Grant this service account access to project", selecciona "Editor" o rol personalizado con permisos de Sheets
-5. Crea la cuenta
+1. Go to "IAM & Admin" > "Service Accounts"
+2. Click "Create Service Account"
+3. Assign a name and description
+4. In "Grant this service account access to project", select "Editor" or a custom role with Sheets permissions
+5. Create the account
 
-### 3. Generar Claves
+### 3. Generate Keys
 
-1. En la lista de Service Accounts, haz clic en la cuenta creada
-2. Ve a la pestaña "Keys"
-3. Haz clic en "Add Key" > "Create new key"
-4. Selecciona formato JSON
-5. Descarga el archivo (ej: `service-account.json`)
+1. In the Service Accounts list, click on the created account
+2. Go to the "Keys" tab
+3. Click "Add Key" > "Create new key"
+4. Select JSON format
+5. Download the file (e.g., `service-account.json`)
 
-**IMPORTANTE**: Guarda este archivo de forma segura. No lo commitees en tu repositorio.
+**IMPORTANT**: Keep this file secure. Do not commit it to your repository.
 
-### 4. Compartir tu Spreadsheet
+### 4. Share Your Spreadsheet
 
-1. Abre tu Google Sheet
-2. Haz clic en "Share" (Compartir)
-3. Agrega el email de la Service Account (está en el JSON, campo `client_email`)
-4. Asigna permisos de "Editor"
+1. Open your Google Sheet
+2. Click "Share"
+3. Add the Service Account email (found in the JSON, field `client_email`)
+4. Assign "Editor" permissions
 
-### 5. Obtener el Spreadsheet ID
+### 5. Get the Spreadsheet ID
 
-El ID está en la URL de tu Google Sheet:
+The ID is in your Google Sheet URL:
 
 ```
 https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                                              Este es tu Spreadsheet ID
+                                              This is your Spreadsheet ID
 ```
 
-## Guía de Inicio Rápido
+## Quick Start Guide
 
-### Ejemplo Mínimo
+### Minimal Example
 
 ```go
 package main
@@ -102,7 +102,7 @@ import (
     "log"
     "os"
     
-    "github.com/yourusername/quire/pkg/quire"
+    "github.com/elbader17/quire/pkg/quire"
 )
 
 type User struct {
@@ -115,13 +115,13 @@ type User struct {
 func main() {
     ctx := context.Background()
     
-    // Leer credenciales
+    // Read credentials
     credentials, err := os.ReadFile("service-account.json")
     if err != nil {
         log.Fatal(err)
     }
     
-    // Crear conexión
+    // Create connection
     db, err := quire.New(quire.Config{
         SpreadsheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms",
         Credentials:   credentials,
@@ -131,7 +131,7 @@ func main() {
     }
     defer db.Close()
     
-    // Insertar datos
+    // Insert data
     users := db.Table("Users")
     err = users.Insert(ctx, []User{
         {ID: 1, Name: "Alice", Email: "alice@example.com", Age: 30},
@@ -141,7 +141,7 @@ func main() {
         log.Fatal(err)
     }
     
-    // Consultar datos
+    // Query data
     var results []User
     err = users.Query().
         Where("Age", ">=", 25).
@@ -151,9 +151,9 @@ func main() {
         log.Fatal(err)
     }
     
-    log.Printf("Encontrados %d usuarios", len(results))
+    log.Printf("Found %d users", len(results))
     
-    // Actualizar datos
+    // Update data
     if len(results) > 0 {
         results[0].Name = "Alice Updated"
         err = users.Update(ctx, 0, results[0])
@@ -162,7 +162,7 @@ func main() {
         }
     }
     
-    // Eliminar datos
+    // Delete data
     err = users.DeleteWhere(ctx, "Status", "=", "inactive")
     if err != nil {
         log.Fatal(err)
@@ -170,71 +170,71 @@ func main() {
 }
 ```
 
-## Conceptos Fundamentales
+## Core Concepts
 
-### Estructura de la Hoja
+### Sheet Structure
 
-Quire espera que tu Google Sheet tenga la siguiente estructura:
+Quire expects your Google Sheet to have the following structure:
 
 | ID | Name  | Email             | Age |
 |----|-------|-------------------|-----|
 | 1  | Alice | alice@example.com | 30  |
 | 2  | Bob   | bob@example.com   | 25  |
 
-- **Primera fila**: Headers que coincidan con los tags `quire` de tu struct
-- **Filas siguientes**: Datos
-- Cada sheet (pestaña) representa una "tabla"
+- **First row**: Headers matching your struct's `quire` tags
+- **Following rows**: Data
+- Each sheet (tab) represents a "table"
 
-### Mapeo de Tipos
+### Type Mapping
 
-Quire convierte automáticamente entre tipos de Go y valores de Sheets:
+Quire automatically converts between Go types and Sheet values:
 
-| Tipo Go | Ejemplo en Sheet | Conversión |
-|---------|------------------|------------|
-| `string` | "Alice" | Directa |
-| `int` | 42 ó "42" | Parseo desde string o float |
-| `float64` | 3.14 ó "3.14" | Parseo desde string |
-| `bool` | "true", "TRUE", "1" | Parseo case-insensitive |
-| `uint` | 100 ó "100" | Parseo con validación |
+| Go Type | Sheet Example | Conversion |
+|---------|---------------|------------|
+| `string` | "Alice" | Direct |
+| `int` | 42 or "42" | Parsing from string or float |
+| `float64` | 3.14 or "3.14" | Parsing from string |
+| `bool` | "true", "TRUE", "1" | Case-insensitive parsing |
+| `uint` | 100 or "100" | Parsing with validation |
 
-## API Completa
+## Complete API
 
-### Configuración
+### Configuration
 
 ```go
 type Config struct {
-    // SpreadsheetID es el ID de tu Google Sheet (obligatorio)
-    // Se encuentra en la URL: .../d/{SPREADSHEET_ID}/...
+    // SpreadsheetID is your Google Sheet ID (required)
+    // Found in URL: .../d/{SPREADSHEET_ID}/...
     SpreadsheetID string
     
-    // Credentials es el contenido del archivo JSON de la Service Account (obligatorio)
-    // Usa os.ReadFile() para cargar el archivo
+    // Credentials is the content of the Service Account JSON file (required)
+    // Use os.ReadFile() to load the file
     Credentials []byte
 }
 ```
 
-### Conexión
+### Connection
 
 ```go
-// Crear una nueva instancia de base de datos
+// Create a new database instance
 db, err := quire.New(quire.Config{
-    SpreadsheetID: "tu-spreadsheet-id",
+    SpreadsheetID: "your-spreadsheet-id",
     Credentials:   credentials,
 })
 if err != nil {
-    // Manejar error (credenciales inválidas, formato incorrecto, etc.)
+    // Handle error (invalid credentials, wrong format, etc.)
 }
 defer db.Close()
 
-// Obtener referencia a una tabla (sheet)
-users := db.Table("Users")  // "Users" es el nombre de la pestaña
+// Get a table handle
+users := db.Table("Users")  // "Users" is the sheet tab name
 products := db.Table("Products")
 ```
 
-### Inserción de Datos
+### Inserting Data
 
 ```go
-// Insert acepta un slice de structs
+// Insert accepts a slice of structs
 users := []User{
     {ID: 1, Name: "Alice", Email: "alice@example.com"},
     {ID: 2, Name: "Bob", Email: "bob@example.com"},
@@ -246,19 +246,19 @@ if err != nil {
 }
 ```
 
-**Notas:**
-- Los datos se agregan al final de la hoja (append)
-- No se verifican duplicados automáticamente
-- Los campos con tag `quire:"-"` se ignoran
+**Notes:**
+- Data is appended to the end of the sheet
+- Duplicates are not checked automatically
+- Fields with tag `quire:"-"` are ignored
 
-### Actualización de Datos
+### Updating Data
 
-#### Update por Índice
+#### Update by Index
 
-Actualiza una fila específica usando su índice (0-based, sin contar el header):
+Update a specific row using its index (0-based, excluding header):
 
 ```go
-// Actualizar la primera fila de datos (índice 0)
+// Update the first data row (index 0)
 updatedUser := User{
     ID:    1,
     Name:  "Alice Updated",
@@ -272,12 +272,12 @@ if err != nil {
 }
 ```
 
-#### Update con Filtro
+#### Update with Filter
 
-Actualiza todas las filas que coincidan con una condición:
+Update all rows matching a condition:
 
 ```go
-// Actualizar todos los usuarios con Status = "pending"
+// Update all users with Status = "pending"
 updatedUser := User{
     ID:     99,
     Name:   "Updated Name",
@@ -292,53 +292,53 @@ if err != nil {
 }
 ```
 
-### Eliminación de Datos
+### Deleting Data
 
-#### Delete por Índice
+#### Delete by Index
 
-Elimina una fila específica usando su índice (0-based, sin contar el header):
+Delete a specific row using its index (0-based, excluding header):
 
 ```go
-// Eliminar la primera fila de datos (índice 0)
+// Delete the first data row (index 0)
 err := db.Table("Users").Delete(ctx, 0)
 if err != nil {
     log.Fatal(err)
 }
 ```
 
-#### Delete con Filtro
+#### Delete with Filter
 
-Elimina todas las filas que coincidan con una condición:
+Delete all rows matching a condition:
 
 ```go
-// Eliminar todos los usuarios con Status = "deleted"
+// Delete all users with Status = "deleted"
 err := db.Table("Users").DeleteWhere(ctx, "Status", "=", "deleted")
 if err != nil {
     log.Fatal(err)
 }
 
-// Eliminar usuarios inactivos mayores de 60
+// Delete inactive users over 60
 err = db.Table("Users").DeleteWhere(ctx, "IsActive", "=", false)
 if err != nil {
     log.Fatal(err)
 }
 ```
 
-**Notas:**
-- `DeleteWhere` elimina físicamente las filas del spreadsheet
-- Las filas se eliminan en orden inverso para mantener los índices correctos
-- Si no hay filas que coincidan, no se produce error
+**Notes:**
+- `DeleteWhere` physically removes rows from the spreadsheet
+- Rows are deleted in reverse order to maintain correct indices
+- If no rows match, no error is returned
 
-### Consultas
+### Queries
 
-#### Query Básico
+#### Basic Query
 
 ```go
 var users []User
 err := db.Table("Users").Query().Get(ctx, &users)
 ```
 
-#### Con Límite
+#### With Limit
 
 ```go
 var users []User
@@ -347,32 +347,32 @@ err := db.Table("Users").Query().
     Get(ctx, &users)
 ```
 
-#### Con Ordenamiento (placeholder)
+#### With Ordering (placeholder)
 
 ```go
 var users []User
 err := db.Table("Users").Query().
-    OrderBy("Age", true).  // true = descendente
+    OrderBy("Age", true).  // true = descending
     Get(ctx, &users)
 ```
 
-**Nota:** El ordenamiento actualmente es un placeholder y no ordena los resultados.
+**Note:** Ordering is currently a placeholder and doesn't actually sort results.
 
-### Filtros
+### Filters
 
-#### Operadores Soportados
+#### Supported Operators
 
-| Operador | Descripción | Ejemplo |
+| Operator | Description | Example |
 |----------|-------------|---------|
-| `=`, `==` | Igualdad | `Where("Status", "=", "active")` |
-| `!=` | Desigualdad | `Where("Status", "!=", "deleted")` |
-| `>` | Mayor que | `Where("Age", ">", 18)` |
-| `>=` | Mayor o igual | `Where("Score", ">=", 90)` |
-| `<` | Menor que | `Where("Price", "<", 100)` |
-| `<=` | Menor o igual | `Where("Stock", "<=", 10)` |
-| `contains`, `like` | Contiene substring (case-insensitive) | `Where("Name", "contains", "john")` |
+| `=`, `==` | Equality | `Where("Status", "=", "active")` |
+| `!=` | Inequality | `Where("Status", "!=", "deleted")` |
+| `>` | Greater than | `Where("Age", ">", 18)` |
+| `>=` | Greater or equal | `Where("Score", ">=", 90)` |
+| `<` | Less than | `Where("Price", "<", 100)` |
+| `<=` | Less or equal | `Where("Stock", "<=", 10)` |
+| `contains`, `like` | Contains substring (case-insensitive) | `Where("Name", "contains", "john")` |
 
-#### Múltiples Filtros (AND)
+#### Multiple Filters (AND)
 
 ```go
 var users []User
@@ -384,55 +384,55 @@ err := db.Table("Users").Query().
 // WHERE Age >= 18 AND Status = 'active' AND Country = 'US'
 ```
 
-#### Filtros con Strings
+#### String Filters
 
 ```go
-// Búsqueda case-insensitive
+// Case-insensitive search
 var users []User
 err := db.Table("Users").Query().
     Where("Name", "contains", "alice").
     Get(ctx, &users)
-// Coincide con "Alice", "ALICE", "alice smith", etc.
+// Matches "Alice", "ALICE", "alice smith", etc.
 ```
 
-### Mapeo de Structs
+### Struct Mapping
 
-#### Tags Básicos
+#### Basic Tags
 
 ```go
 type Product struct {
-    ID          int     `quire:"ID"`          // Mapea a columna "ID"
-    Name        string  `quire:"Name"`        // Mapea a columna "Name"
-    Price       float64 `quire:"Price"`       // Mapea a columna "Price"
-    Description string  `quire:"Description"` // Mapea a columna "Description"
+    ID          int     `quire:"ID"`          // Maps to "ID" column
+    Name        string  `quire:"Name"`        // Maps to "Name" column
+    Price       float64 `quire:"Price"`       // Maps to "Price" column
+    Description string  `quire:"Description"` // Maps to "Description" column
 }
 ```
 
-#### Ignorar Campos
+#### Ignore Fields
 
 ```go
 type User struct {
     ID        int       `quire:"ID"`
     Name      string    `quire:"Name"`
-    Password  string    `quire:"-"`  // Este campo se ignora
-    CreatedAt time.Time `quire:"-"`  // Este campo también se ignora
+    Password  string    `quire:"-"`  // This field is ignored
+    CreatedAt time.Time `quire:"-"`  // This field is also ignored
 }
 ```
 
-#### Mapeo por Nombre de Campo
+#### Mapping by Field Name
 
-Si no especificas tag, se usa el nombre del campo:
+If you don't specify a tag, the field name is used:
 
 ```go
 type User struct {
-    ID   int    // Mapea a columna "ID"
-    Name string // Mapea a columna "Name"
+    ID   int    // Maps to "ID" column
+    Name string // Maps to "Name" column
 }
 ```
 
-## Ejemplos Avanzados
+## Advanced Examples
 
-### CRUD Completo
+### Complete CRUD
 
 ```go
 package main
@@ -443,7 +443,7 @@ import (
     "log"
     "os"
     
-    "github.com/yourusername/quire/pkg/quire"
+    "github.com/elbader17/quire/pkg/quire"
 )
 
 type Task struct {
@@ -459,7 +459,7 @@ func main() {
     
     credentials, _ := os.ReadFile("service-account.json")
     db, _ := quire.New(quire.Config{
-        SpreadsheetID: "tu-spreadsheet-id",
+        SpreadsheetID: "your-spreadsheet-id",
         Credentials:   credentials,
     })
     defer db.Close()
@@ -468,17 +468,17 @@ func main() {
     
     // CREATE
     newTasks := []Task{
-        {ID: 1, Title: "Implementar login", Status: "pending", Priority: 1},
-        {ID: 2, Title: "Crear tests", Status: "pending", Priority: 2},
-        {ID: 3, Title: "Documentar API", Status: "done", Priority: 3},
+        {ID: 1, Title: "Implement login", Status: "pending", Priority: 1},
+        {ID: 2, Title: "Create tests", Status: "pending", Priority: 2},
+        {ID: 3, Title: "Document API", Status: "done", Priority: 3},
     }
     
     if err := tasks.Insert(ctx, newTasks); err != nil {
         log.Fatal(err)
     }
-    fmt.Println("Tareas creadas")
+    fmt.Println("Tasks created")
     
-    // READ - Todas las tareas pendientes de alta prioridad
+    // READ - All pending high priority tasks
     var pendingTasks []Task
     err := tasks.Query().
         Where("Status", "=", "pending").
@@ -488,12 +488,12 @@ func main() {
         log.Fatal(err)
     }
     
-    fmt.Printf("Tareas pendientes de alta prioridad: %d\n", len(pendingTasks))
+    fmt.Printf("Pending high priority tasks: %d\n", len(pendingTasks))
     for _, task := range pendingTasks {
-        fmt.Printf("  - %s (Prioridad: %d)\n", task.Title, task.Priority)
+        fmt.Printf("  - %s (Priority: %d)\n", task.Title, task.Priority)
     }
     
-    // READ - Tareas completadas
+    // READ - Completed tasks
     var doneTasks []Task
     err = tasks.Query().
         Where("Status", "=", "done").
@@ -502,19 +502,19 @@ func main() {
         log.Fatal(err)
     }
     
-    fmt.Printf("Tareas completadas: %d\n", len(doneTasks))
+    fmt.Printf("Completed tasks: %d\n", len(doneTasks))
     
-    // UPDATE - Marcar una tarea como completada
+    // UPDATE - Mark a task as completed
     if len(pendingTasks) > 0 {
         pendingTasks[0].Status = "done"
         err = tasks.Update(ctx, 0, pendingTasks[0])
         if err != nil {
             log.Fatal(err)
         }
-        fmt.Printf("Tarea '%s' actualizada a completada\n", pendingTasks[0].Title)
+        fmt.Printf("Task '%s' updated to completed\n", pendingTasks[0].Title)
     }
     
-    // UPDATE MASIVO - Cambiar prioridad de todas las tareas pendientes
+    // BULK UPDATE - Change priority of all pending tasks
     err = tasks.UpdateWhere(ctx, "Status", "=", "pending", Task{
         ID:     0,
         Title:  "Updated",
@@ -524,18 +524,18 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println("Prioridad de tareas pendientes actualizada")
+    fmt.Println("Priority of pending tasks updated")
     
-    // DELETE - Eliminar tareas canceladas
+    // DELETE - Remove cancelled tasks
     err = tasks.DeleteWhere(ctx, "Status", "=", "cancelled")
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Println("Tareas canceladas eliminadas")
+    fmt.Println("Cancelled tasks deleted")
 }
 ```
 
-### Sistema de Inventario
+### Inventory System
 
 ```go
 type Product struct {
@@ -550,7 +550,7 @@ func getLowStockProducts(ctx context.Context, db *quire.DB) ([]Product, error) {
     var products []Product
     err := db.Table("Inventory").Query().
         Where("Stock", "<", 10).
-        OrderBy("Stock", false).  // Ordenar por stock ascendente
+        OrderBy("Stock", false).  // Sort by stock ascending
         Get(ctx, &products)
     return products, err
 }
@@ -559,7 +559,7 @@ func getProductsByCategory(ctx context.Context, db *quire.DB, category string) (
     var products []Product
     err := db.Table("Inventory").Query().
         Where("Category", "=", category).
-        Where("Stock", ">", 0).  // Solo productos disponibles
+        Where("Stock", ">", 0).  // Only available products
         Get(ctx, &products)
     return products, err
 }
@@ -574,7 +574,7 @@ func searchProducts(ctx context.Context, db *quire.DB, query string) ([]Product,
 }
 ```
 
-### Gestión de Usuarios
+### User Management
 
 ```go
 type User struct {
@@ -615,17 +615,17 @@ func findUserByEmail(ctx context.Context, db *quire.DB, email string) (*User, er
         return nil, err
     }
     if len(users) == 0 {
-        return nil, fmt.Errorf("usuario no encontrado")
+        return nil, fmt.Errorf("user not found")
     }
     return &users[0], nil
 }
 ```
 
-### Uso con Context y Timeouts
+### Using Context with Timeouts
 
 ```go
 func getUsersWithTimeout(db *quire.DB) ([]User, error) {
-    // Crear context con timeout de 5 segundos
+    // Create context with 5 second timeout
     ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
     defer cancel()
     
@@ -636,7 +636,7 @@ func getUsersWithTimeout(db *quire.DB) ([]User, error) {
     
     if err != nil {
         if errors.Is(err, context.DeadlineExceeded) {
-            return nil, fmt.Errorf("timeout al consultar usuarios")
+            return nil, fmt.Errorf("timeout querying users")
         }
         return nil, err
     }
@@ -645,32 +645,32 @@ func getUsersWithTimeout(db *quire.DB) ([]User, error) {
 }
 ```
 
-## Mejores Prácticas
+## Best Practices
 
-### 1. Manejo de Errores
+### 1. Error Handling
 
 ```go
 if err != nil {
-    // No usar log.Fatal en código de producción
-    // Mejor retornar el error para manejarlo arriba en la pila
+    // Don't use log.Fatal in production code
+    // Better return the error to handle it up the stack
     return fmt.Errorf("failed to query users: %w", err)
 }
 ```
 
-### 2. Cierre de Conexiones
+### 2. Closing Connections
 
 ```go
 db, err := quire.New(config)
 if err != nil {
     return err
 }
-defer db.Close()  // Siempre usar defer
+defer db.Close()  // Always use defer
 ```
 
-### 3. Validación de Datos
+### 3. Data Validation
 
 ```go
-// Validar antes de insertar
+// Validate before inserting
 if user.Age < 0 {
     return fmt.Errorf("age cannot be negative")
 }
@@ -682,12 +682,12 @@ if user.Email == "" {
 err := db.Table("Users").Insert(ctx, []User{user})
 ```
 
-### 4. Paginación Manual
+### 4. Manual Pagination
 
 ```go
 func getUsersPaginated(ctx context.Context, db *quire.DB, page, pageSize int) ([]User, error) {
-    // Nota: Esto carga todos los datos y luego filtra
-    // Para grandes volúmenes, considera otras estrategias
+    // Note: This loads all data and then filters
+    // For large volumes, consider other strategies
     var allUsers []User
     err := db.Table("Users").Query().Get(ctx, &allUsers)
     if err != nil {
@@ -709,18 +709,18 @@ func getUsersPaginated(ctx context.Context, db *quire.DB, page, pageSize int) ([
 }
 ```
 
-### 5. Campos Sensibles
+### 5. Sensitive Fields
 
 ```go
 type User struct {
     ID       int    `quire:"ID"`
     Username string `quire:"Username"`
     Email    string `quire:"Email"`
-    Password string `quire:"-"`  // Nunca almacenar en Sheets
+    Password string `quire:"-"`  // Never store in Sheets
 }
 ```
 
-### 6. Caché de Conexión
+### 6. Connection Caching
 
 ```go
 type UserRepository struct {
@@ -750,76 +750,76 @@ func (r *UserRepository) GetUsers(ctx context.Context) ([]User, error) {
 }
 ```
 
-## Limitaciones
+## Limitations
 
-1. **No hay transacciones**: Las operaciones no son atómicas. Si una operación falla a mitad de proceso, algunos cambios pueden haberse aplicado y otros no.
+1. **No transactions**: Operations are not atomic. If an operation fails halfway, some changes may have been applied while others haven't.
 
-2. **Rate Limits de Google**: Google Sheets API tiene cuotas:
-   - 500 requests por 100 segundos por proyecto
-   - 100 requests por 100 segundos por usuario
+2. **Google Rate Limits**: Google Sheets API has quotas:
+   - 500 requests per 100 seconds per project
+   - 100 requests per 100 seconds per user
 
-3. **Límite de filas**: Google Sheets soporta hasta 10 millones de celdas por spreadsheet.
+3. **Row limit**: Google Sheets supports up to 10 million cells per spreadsheet.
 
-4. **Ordenamiento**: La función `OrderBy` actualmente es un placeholder y no ordena realmente los resultados.
+4. **Sorting**: The `OrderBy` function is currently a placeholder and doesn't actually sort results.
 
-5. **Concurrencia**: Aunque Quire soporta `context.Context`, no hay control de concurrencia a nivel de filas.
+5. **Concurrency**: While Quire supports `context.Context`, there's no row-level concurrency control.
 
-## Solución de Problemas
+## Troubleshooting
 
 ### Error: "spreadsheet ID is required"
 
-Verifica que estás pasando el SpreadsheetID correctamente:
+Verify you're passing the SpreadsheetID correctly:
 
 ```go
 db, err := quire.New(quire.Config{
-    SpreadsheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms", // Sin espacios
+    SpreadsheetID: "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms", // No spaces
     Credentials:   credentials,
 })
 ```
 
 ### Error: "credentials are required"
 
-Asegúrate de que el archivo de credenciales existe y no está vacío:
+Make sure the credentials file exists and isn't empty:
 
 ```go
 credentials, err := os.ReadFile("service-account.json")
 if err != nil {
-    log.Fatal("No se pudo leer el archivo de credenciales:", err)
+    log.Fatal("Could not read credentials file:", err)
 }
 
 if len(credentials) == 0 {
-    log.Fatal("El archivo de credenciales está vacío")
+    log.Fatal("Credentials file is empty")
 }
 ```
 
 ### Error: "failed to read data"
 
-Posibles causas:
-1. La Service Account no tiene acceso al spreadsheet
-2. El spreadsheet no existe
-3. La hoja (sheet) no existe
+Possible causes:
+1. Service Account doesn't have access to the spreadsheet
+2. Spreadsheet doesn't exist
+3. Sheet (tab) doesn't exist
 
-Solución:
-- Verifica que compartiste el spreadsheet con el email de la Service Account
-- Verifica que el nombre de la tabla coincide con el nombre de la pestaña
+Solution:
+- Verify you shared the spreadsheet with the Service Account email
+- Verify the table name matches the sheet tab name
 
 ### Error: "googleapi: Error 403: Forbidden"
 
-La Service Account no tiene permisos suficientes:
-- Ve a Google Sheets > Share
-- Asegúrate de dar permisos de "Editor"
-- Verifica que no haya restricciones de dominio
+Service Account doesn't have sufficient permissions:
+- Go to Google Sheets > Share
+- Make sure to give "Editor" permissions
+- Check for domain restrictions
 
-### Los datos no se mapean correctamente
+### Data doesn't map correctly
 
-Verifica que:
-1. Los headers en la primera fila coincidan exactamente con los tags `quire` o nombres de campo
-2. Los tipos de datos sean compatibles
-3. No haya espacios extra en los headers
+Verify that:
+1. Headers in the first row match exactly with `quire` tags or field names
+2. Data types are compatible
+3. No extra spaces in headers
 
 ```go
 // Sheet: | ID | Name  | Email |
-// Struct:  ID   Name    Email   <- Coinciden exactamente
+// Struct:  ID   Name    Email   <- Exact match
 
 type User struct {
     ID    int    `quire:"ID"`
@@ -828,35 +828,35 @@ type User struct {
 }
 ```
 
-### Los filtros no funcionan
+### Filters don't work
 
-- Verifica el nombre de la columna (case-sensitive)
-- Asegúrate de que los operadores sean válidos: `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`
-- Para strings, usa `contains` para búsquedas parciales
+- Check column name (case-sensitive)
+- Make sure operators are valid: `=`, `!=`, `>`, `>=`, `<`, `<=`, `contains`
+- For strings, use `contains` for partial matches
 
-### Performance lenta
+### Slow performance
 
-Para grandes volúmenes de datos:
-1. Usa `Limit()` para paginar resultados
-2. Considera dividir datos en múltiples sheets
-3. Implementa caché local si los datos no cambian frecuentemente
-4. Ten en cuenta los rate limits de Google API
+For large data volumes:
+1. Use `Limit()` to paginate results
+2. Consider splitting data into multiple sheets
+3. Implement local cache if data doesn't change frequently
+4. Keep in mind Google's API rate limits
 
-## Licencia
+## License
 
-MIT License - ver [LICENSE](LICENSE) para más detalles.
+MIT License - see [LICENSE](LICENSE) for details.
 
-## Contribuir
+## Contributing
 
-Las contribuciones son bienvenidas. Por favor:
+Contributions are welcome. Please:
 
-1. Fork el repositorio
-2. Crea una rama para tu feature (`git checkout -b feature/amazing-feature`)
-3. Commitea tus cambios (`git commit -m 'Add amazing feature'`)
-4. Push a la rama (`git push origin feature/amazing-feature`)
-5. Abre un Pull Request
+1. Fork the repository
+2. Create a branch for your feature (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Agradecimientos
+## Acknowledgments
 
 - [Google Sheets API](https://developers.google.com/sheets/api)
 - [Google API Go Client](https://github.com/googleapis/google-api-go-client)

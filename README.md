@@ -2,8 +2,8 @@
 
 Una librería de Go que proporciona una interfaz tipo base de datos para Google Sheets. Convierte tus hojas de cálculo en una base de datos documental con operaciones CRUD, consultas con filtros y mapeo de structs.
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/quire)](https://goreportcard.com/report/github.com/yourusername/quire)
-[![GoDoc](https://godoc.org/github.com/yourusername/quire?status.svg)](https://godoc.org/github.com/yourusername/quire)
+[![Go Report Card](https://goreportcard.com/badge/github.com/elbader17/quire)](https://goreportcard.com/report/github.com/elbader17/quire)
+[![GoDoc](https://godoc.org/github.com/elbader17/quire?status.svg)](https://godoc.org/github.com/elbader17/quire)
 
 ## Características
 
@@ -37,7 +37,7 @@ Una librería de Go que proporciona una interfaz tipo base de datos para Google 
 ## Instalación
 
 ```bash
-go get github.com/yourusername/quire
+go get github.com/elbader17/quire
 ```
 
 Requiere Go 1.21 o superior.
@@ -86,8 +86,8 @@ El ID está en la URL de tu Google Sheet:
 
 ```
 https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              Este es tu Spreadsheet ID
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                              Este es tu Spreadsheet ID
 ```
 
 ## Guía de Inicio Rápido

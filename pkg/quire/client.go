@@ -78,3 +78,53 @@ func (c *sheetsClient) Clear(ctx context.Context, range_ string) error {
 	}
 	return nil
 }
+
+func (c *sheetsClient) DeleteRows(ctx context.Context, sheetName string, rowIndices []int) error {
+	if len(rowIndices) == 0 {
+		return nil
+	}
+
+	sheetID, err := c.getSheetID(ctx, sheetName)
+	if err != nil {
+		return fmt.Errorf("failed to get sheet ID: %w", err)
+	}
+
+	var requests []*sheets.Request
+	for _, idx := range rowIndices {
+		requests = append(requests, &sheets.Request{
+			DeleteDimension: &sheets.DeleteDimensionRequest{
+				Range: &sheets.DimensionRange{
+					SheetId:    sheetID,
+					Dimension:  "ROWS",
+					StartIndex: int64(idx),
+					EndIndex:   int64(idx + 1),
+				},
+			},
+		})
+	}
+
+	_, err = c.srv.Spreadsheets.BatchUpdate(c.spreadsheetID, &sheets.BatchUpdateSpreadsheetRequest{
+		Requests: requests,
+	}).Context(ctx).Do()
+
+	if err != nil {
+		return fmt.Errorf("failed to delete rows: %w", err)
+	}
+
+	return nil
+}
+
+func (c *sheetsClient) getSheetID(ctx context.Context, sheetName string) (int64, error) {
+	spreadsheet, err := c.srv.Spreadsheets.Get(c.spreadsheetID).Context(ctx).Do()
+	if err != nil {
+		return 0, fmt.Errorf("failed to get spreadsheet: %w", err)
+	}
+
+	for _, sheet := range spreadsheet.Sheets {
+		if sheet.Properties.Title == sheetName {
+			return sheet.Properties.SheetId, nil
+		}
+	}
+
+	return 0, fmt.Errorf("sheet %q not found", sheetName)
+}

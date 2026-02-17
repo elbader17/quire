@@ -19,6 +19,7 @@ type SheetsClient interface {
 	Write(ctx context.Context, range_ string, values [][]interface{}) error
 	Append(ctx context.Context, range_ string, values [][]interface{}) error
 	Clear(ctx context.Context, range_ string) error
+	DeleteRows(ctx context.Context, sheetName string, rowIndices []int) error
 }
 
 // Config holds database configuration.

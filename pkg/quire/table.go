@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -31,6 +32,138 @@ func (t *Table) Insert(ctx context.Context, records interface{}) error {
 
 	range_ := t.name + "!A1"
 	return t.db.client.Append(ctx, range_, values)
+}
+
+// Update modifies a specific row by its index (0-based, excluding header).
+func (t *Table) Update(ctx context.Context, rowIndex int, record interface{}) error {
+	if rowIndex < 0 {
+		return fmt.Errorf("row index cannot be negative")
+	}
+
+	values, err := structToValues(record)
+	if err != nil {
+		return fmt.Errorf("failed to convert record: %w", err)
+	}
+
+	actualRow := rowIndex + 2
+	colCount := len(values)
+	endCol := columnIndexToLetter(colCount - 1)
+	range_ := fmt.Sprintf("%s!A%d:%s%d", t.name, actualRow, endCol, actualRow)
+
+	return t.db.client.Write(ctx, range_, [][]interface{}{values})
+}
+
+// UpdateWhere updates all rows matching the filter condition.
+func (t *Table) UpdateWhere(ctx context.Context, column, operator string, value interface{}, record interface{}) error {
+	data, err := t.db.client.Read(ctx, t.name)
+	if err != nil {
+		return fmt.Errorf("failed to read data: %w", err)
+	}
+
+	if len(data) < 2 {
+		return nil
+	}
+
+	headers := data[0]
+	rows := data[1:]
+
+	filter := Filter{Column: column, Operator: operator, Value: value}
+	indices := []int{}
+	for i, row := range rows {
+		if matchesFilter(row, headers, filter) {
+			indices = append(indices, i)
+		}
+	}
+
+	if len(indices) == 0 {
+		return nil
+	}
+
+	values, err := structToValues(record)
+	if err != nil {
+		return fmt.Errorf("failed to convert record: %w", err)
+	}
+
+	colCount := len(values)
+	endCol := columnIndexToLetter(colCount - 1)
+
+	for _, idx := range indices {
+		actualRow := idx + 2
+		range_ := fmt.Sprintf("%s!A%d:%s%d", t.name, actualRow, endCol, actualRow)
+		if err := t.db.client.Write(ctx, range_, [][]interface{}{values}); err != nil {
+			return fmt.Errorf("failed to update row %d: %w", idx, err)
+		}
+	}
+
+	return nil
+}
+
+// Delete removes a specific row by its index (0-based, excluding header).
+func (t *Table) Delete(ctx context.Context, rowIndex int) error {
+	if rowIndex < 0 {
+		return fmt.Errorf("row index cannot be negative")
+	}
+
+	actualRow := rowIndex + 1
+	return t.db.client.DeleteRows(ctx, t.name, []int{actualRow})
+}
+
+// DeleteWhere removes all rows matching the filter condition.
+func (t *Table) DeleteWhere(ctx context.Context, column, operator string, value interface{}) error {
+	data, err := t.db.client.Read(ctx, t.name)
+	if err != nil {
+		return fmt.Errorf("failed to read data: %w", err)
+	}
+
+	if len(data) < 2 {
+		return nil
+	}
+
+	headers := data[0]
+	rows := data[1:]
+
+	filter := Filter{Column: column, Operator: operator, Value: value}
+	indices := []int{}
+	for i, row := range rows {
+		if matchesFilter(row, headers, filter) {
+			indices = append(indices, i+1)
+		}
+	}
+
+	if len(indices) == 0 {
+		return nil
+	}
+
+	sort.Sort(sort.Reverse(sort.IntSlice(indices)))
+
+	return t.db.client.DeleteRows(ctx, t.name, indices)
+}
+
+func matchesFilter(row []interface{}, headers []interface{}, filter Filter) bool {
+	colIdx := -1
+	for i, h := range headers {
+		if h == filter.Column {
+			colIdx = i
+			break
+		}
+	}
+	if colIdx == -1 || colIdx >= len(row) {
+		return false
+	}
+
+	return matchesOperator(row[colIdx], filter.Operator, filter.Value)
+}
+
+func columnIndexToLetter(index int) string {
+	if index < 0 {
+		return "A"
+	}
+	result := ""
+	for index >= 0 {
+		result = string(rune('A'+index%26)) + result
+		index = index/26 - 1
+	}
+	return result
 }
 
 // Query provides a fluent interface for building queries.

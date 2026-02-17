@@ -35,7 +35,7 @@ Una librería de Go que proporciona una interfaz tipo base de datos para Google 
 ## Instalación
 
 ```bash
-go get github.com/yourusername/quire
+go get github.com/elbader17/quire
 ```
 
 Requiere Go 1.21 o superior.
@@ -84,8 +84,8 @@ El ID está en la URL de tu Google Sheet:
 
 ```
 https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-                              Este es tu Spreadsheet ID
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                              Este es tu Spreadsheet ID
 ```
 
 ## Guía de Inicio Rápido

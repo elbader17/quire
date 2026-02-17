@@ -6,15 +6,22 @@ import (
 )
 
 type MockSheetsClient struct {
-	ReadFunc   func(ctx context.Context, range_ string) ([][]interface{}, error)
-	WriteFunc  func(ctx context.Context, range_ string, values [][]interface{}) error
-	AppendFunc func(ctx context.Context, range_ string, values [][]interface{}) error
-	ClearFunc  func(ctx context.Context, range_ string) error
+	ReadFunc       func(ctx context.Context, range_ string) ([][]interface{}, error)
+	WriteFunc      func(ctx context.Context, range_ string, values [][]interface{}) error
+	AppendFunc     func(ctx context.Context, range_ string, values [][]interface{}) error
+	ClearFunc      func(ctx context.Context, range_ string) error
+	DeleteRowsFunc func(ctx context.Context, sheetName string, rowIndices []int) error
 
-	ReadCalls   []MockCall
-	WriteCalls  []MockCall
-	AppendCalls []MockCall
-	ClearCalls  []MockCall
+	ReadCalls       []MockCall
+	WriteCalls      []MockCall
+	AppendCalls     []MockCall
+	ClearCalls      []MockCall
+	DeleteRowsCalls []DeleteRowsCall
+}
+
+type DeleteRowsCall struct {
+	SheetName  string
+	RowIndices []int
 }
 
 type MockCall struct {
@@ -54,9 +61,18 @@ func (m *MockSheetsClient) Clear(ctx context.Context, range_ string) error {
 	return fmt.Errorf("Clear not implemented")
 }
 
+func (m *MockSheetsClient) DeleteRows(ctx context.Context, sheetName string, rowIndices []int) error {
+	m.DeleteRowsCalls = append(m.DeleteRowsCalls, DeleteRowsCall{SheetName: sheetName, RowIndices: rowIndices})
+	if m.DeleteRowsFunc != nil {
+		return m.DeleteRowsFunc(ctx, sheetName, rowIndices)
+	}
+	return nil
+}
+
 func (m *MockSheetsClient) Reset() {
 	m.ReadCalls = nil
 	m.WriteCalls = nil
 	m.AppendCalls = nil
 	m.ClearCalls = nil
+	m.DeleteRowsCalls = nil
 }

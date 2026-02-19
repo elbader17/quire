@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/yourusername/quire/pkg/quire"
+	"github.com/elbader17/quire/pkg/quire"
 )
 
 type User struct {

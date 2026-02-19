@@ -1,4 +1,4 @@
-module github.com/yourusername/quire
+module github.com/elbader17/quire
 
 go 1.25.6
 
